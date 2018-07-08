@@ -1,0 +1,3 @@
+if ~exist('im_cover','var')
+    errordlg('ÇëÑ¡ÔñÔØÌåÍ¼Æ¬','error')
+end

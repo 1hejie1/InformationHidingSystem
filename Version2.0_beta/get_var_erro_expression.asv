@@ -1,0 +1,4 @@
+
+if  isempty(key_2)
+    errordlg('请输入隐藏信息的密钥，并确定','错误')
+end

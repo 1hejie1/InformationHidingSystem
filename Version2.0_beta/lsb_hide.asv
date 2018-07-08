@@ -1,0 +1,68 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%B06022120何杰设计  LSB信息隐藏
+%算法描述：
+%1、图像DCT信息隐藏算法：
+%a. 将载体图像分成8×8的象素块，每一块只能精确地编码一个秘密信息位；使用带密钥的随机算法产生一个随机序列，每次随机选择一个象素块来隐藏信息；
+%b. 使用带密钥的随机算法产生一个随机序列，每次随机选择一个象素块来隐藏信息；
+%c. 对该象素块进行DCT变换，选择其中的两个系数作为信息位的载体，本实验中选择（4，1）和（3，2）两个中频系数；
+%d. 选择当前信息位，如果信息为为1，使（4，1）>（3，2），反之如果信息位为0，使（3，2）>（4，1）；
+%e. 每8个位校验一次奇偶，存在另一个随机块中。
+
+%2、图像DCT信息提取算法：
+%a. 输入密钥，产生与DCT信息隐藏一样的随机序列；
+%b. 根据随机序列每次选择一个象素块，比较（4，1）和（3，2）的大小，如果（4，1）>（3，2），得隐藏信息位为1，反之得隐藏信息位0；
+%c. 每提取8个信息位进行一次奇偶校验。
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% 读入载体图像
+%file_name='lena.bmp';
+%cover_object=imread(file_name);
+cover_object=im_cover;
+% 载体图像的行数和列数
+r_cover=size(cover_object,1);	%行数
+l_cover=size(cover_object,2);	%列数
+
+% 读入秘密信息图像
+%file_name='best.bmp';
+%message0=imread(file_name);
+message0=im_message;
+
+% 秘密信息图像的行数和列数
+r_message=size(message0,1);	%行数
+l_message=size(message0,2);	%列数
+% 将秘密信息图像转化为二值序列
+message=reshape(message0,1,r_message*l_message);
+len_msg=length(message);
+
+info_hidden_image=uint8(cover_object);
+% 随机间隔函数的密钥
+%key=25;
+
+%判断载体是否足够
+if r_message*l_message > (r_cover*l_cover/8)
+    errordlg('要嵌入信息量过大，无法嵌入！');
+    error();
+end;
+%用key初始化并生成随即序列
+rand('state',key_1);
+randno=randperm(r_cover*l_cover);%产生随机的1到r_cover*l_cover/64之间不重复的整数矩阵
+
+h=waitbar(0,'正在使用LSB算法嵌入秘密信息图像，请等待');
+
+for i=1:(r_message*l_message)
+    waitbar(i/len_msg,h);
+    value=randno(1,i);
+        row=ceil(value/l_cover);%求得随机整数矩阵里的值对应于再载体图像中的行位置
+        col=mod(value,l_cover);%求得随机整数矩阵里的值对应于再载体图像中的列位置
+        if col==0
+            col=l_cover;%如果取模运算结果为0,即为最后一列
+        end
+       info_hidden_image(row,col)=bitset(info_hidden_image(row,col),1,message(1,i)); %将所选像素点的最低位值置为二值秘密信息的相应位值
+end
+close(h);
+%%%%%信息写回保存%
+imwrite(info_hidden_image,'info_hidden_image.bmp','bmp');
+
+figure
+subplot(121),imshow(cover_object),title('原图像');
+subplot(122),imshow(info_hidden_image),title('使用LSB算法隐藏信息后的图像');
